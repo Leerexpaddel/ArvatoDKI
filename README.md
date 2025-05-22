@@ -89,7 +89,7 @@ Erstellen Sie eine Datei `.env` mit folgendem Inhalt:
 ```dotenv
 # OpenAI API Key (erforderlich)
 OPENAI_API_KEY="sk-IHREN_OPENAI_API_SCHLUESSEL_HIER_EINSETZEN"
-MONGO_URI="mongodb+srv://Leerex:1ngHo5IaHJGSEVwE@arvato.0owvnmp.mongodb.net/?retryWrites=true&w=majority&appName=Arvato"
+MONGO_URI="Mongo URL einsetzten"
 MONGO_DB_NAME="attention_guiding_db"
 MONGO_COLLECTION_INSIGHTS="insights"
 MONGO_COLLECTION_RAW_DATA="raw_data_summaries"
