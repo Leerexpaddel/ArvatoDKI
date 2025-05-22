@@ -151,3 +151,4 @@ Die App öffnet sich im Browser unter: [http://localhost:8501](http://localhost:
    * 💾 In MongoDB speichern (sofern verbunden)
    * ⬇️ JSON herunterladen
 
+# ArvatoDKI
