@@ -36,10 +36,10 @@ if "last_analyzed_filename" not in st.session_state:
     st.session_state.last_analyzed_filename = ""
 if "last_analyzed_dataframe" not in st.session_state:
     st.session_state.last_analyzed_dataframe = None
-if "use_mongodb_for_analysis" not in st.session_state: # Für die Hauptanalyse/neue Analyse
+if "use_mongodb_for_analysis" not in st.session_state: 
     st.session_state.use_mongodb_for_analysis = False
-if "use_mongodb_for_follow_up" not in st.session_state: # NEU: Für die Folgeanalyse
-    st.session_state.use_mongodb_for_follow_up = False # Standard auch "aus"
+if "use_mongodb_for_follow_up" not in st.session_state: 
+    st.session_state.use_mongodb_for_follow_up = False 
 if "selected_follow_up_question" not in st.session_state:
     st.session_state.selected_follow_up_question = None
 if "current_follow_up_question_for_saving" not in st.session_state:
@@ -49,7 +49,7 @@ if "show_full_table_preview" not in st.session_state:
 
 
 # --- 2. Streamlit UI-Layout ---
-# Custom CSS (bleibt unverändert)
+# Custom CSS 
 st.markdown(
     """
     <style>
@@ -384,7 +384,7 @@ with col2:
                     "Wählen Sie eine Frage für eine detailliertere Untersuchung:",
                     options=options_for_selectbox,
                     index=current_selection_idx,
-                    key="follow_up_selectbox_key" # Key beibehalten oder neu setzen, wenn nötig
+                    key="follow_up_selectbox_key"
                 )
 
                 # NEUE SEPARATE CHECKBOX FÜR MONGO DB NUTZUNG BEI FOLGEANALYSE
@@ -395,7 +395,7 @@ with col2:
                     disabled=(mongo_client is None),
                     key="mongodb_follow_up_checkbox" # Eindeutiger Key für diese Checkbox
                 )
-                if mongo_client is None and st.session_state.use_mongodb_for_follow_up: # Zusätzliche Info
+                if mongo_client is None and st.session_state.use_mongodb_for_follow_up: 
                     st.caption("MongoDB nicht verbunden, Option hat keine Auswirkung.")
 
 
@@ -414,7 +414,7 @@ with col2:
                             st.session_state.analysis_results = perform_llm_analysis(
                                 st.session_state.last_analyzed_dataframe,
                                 openai_client,
-                                client_to_pass_ff, # Hier übergeben
+                                client_to_pass_ff, 
                                 final_additional_context,
                                 st.session_state.last_analyzed_filename,
                                 follow_up_question=st.session_state.selected_follow_up_question,

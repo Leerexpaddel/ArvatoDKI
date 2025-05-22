@@ -2,7 +2,7 @@
 import os
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure, OperationFailure
-# import streamlit as st  <-- DIESE ZEILE ENTFERNEN
+# import streamlit as st
 import pandas as pd
 
 # KEIN @st.cache_resource HIER! Es wird in app.py initialisiert und übergeben.

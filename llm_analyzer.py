@@ -5,12 +5,11 @@ import json
 import streamlit as st
 import pandas as pd
 
-# KEINE PUNKTE HIER!
-from utils import extract_json_from_string, get_basic_dataframe_summary # KEIN PUNKT
-from db_manager import save_insight, get_similar_insights # type: ignore
+from utils import extract_json_from_string, get_basic_dataframe_summary 
+from db_manager import save_insight, get_similar_insights 
 
 # Diese Funktion wird jetzt in app.py aufgerufen und gecached.
-def get_openai_client_internal(): # Umbenannt, damit es nicht mit der app.py-Variante kollidiert
+def get_openai_client_internal(): 
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return None
@@ -75,7 +74,7 @@ def perform_llm_analysis(
                         
                         # Stelle sicher, dass json.dumps auf das konvertierte Dictionary angewendet wird
                         if top_values_for_json:
-                            # HIER WAR DER FEHLER: Verwende top_values_for_json
+            
                             formatted_summary_for_llm += f"    - Häufigste Werte (Top 5): {json.dumps(top_values_for_json)}\n" 
                         else:
                             formatted_summary_for_llm += f"    - Häufigste Werte (Top 5): Keine oder konnten nicht serialisiert werden.\n"
@@ -89,7 +88,6 @@ def perform_llm_analysis(
     
     if mongo_client:
         st.info("Suche nach ähnlichen historischen Erkenntnissen (falls MongoDB verbunden)...")
-        # detailed_data_summary_dict ist hier bereits verfügbar
         query_for_similar_insights = ""
         if isinstance(detailed_data_summary_dict.get('column_names'), list) and isinstance(detailed_data_summary_dict.get('numerical_summary'), dict):
             query_for_similar_insights = f"DataFrame overview: columns {detailed_data_summary_dict['column_names']}, rows {detailed_data_summary_dict['num_rows']}. Focus on numerical data: {detailed_data_summary_dict['numerical_summary']}"
@@ -190,16 +188,16 @@ def perform_llm_analysis(
             "\n    * **Regionale Probleme/Chancen:** Unterschiede in Metriken zwischen verschiedenen Regionen, Standorten, etc."
             "\n    * **Korrelationen/Abhängigkeiten:** Interessante Zusammenhänge zwischen verschiedenen Spalten (z.B. 'Wenn Marketingausgaben für Produkt X steigen, steigt auch der Umsatz')."
             "\n    * **Neue und unerwartete Muster:** Achte auch auf Muster, die nicht in den bisher bekannten Kategorien oder historischen Beispielen auftauchen, aber dennoch signifikant sind."
-            "\n    * **Kombinierte & Segment-spezifische Muster:** Suche aktiv nach Mustern, die erst durch die Kombination mehrerer Variablen oder durch Betrachtung spezifischer Datensegmente offensichtlich werden." # NEU
-            "\n    * **Kontraintuitive Erkenntnisse:** Identifiziere Erkenntnisse, die etablierten Annahmen widersprechen könnten oder eine neue Perspektive auf die Geschäftsdaten eröffnen." # NEU
-            "\n    * **Langsame, stetige Veränderungen:** Analysiere, ob es langsame, aber stetige Veränderungen gibt, die über längere Zeiträume signifikant werden, auch wenn sie kurzfristig unscheinbar wirken." # NEU
-            "\n    * **Indirekte Zusammenhänge:** Achte auf Korrelationen zwischen scheinbar unabhängigen Metriken. Gibt es indirekte Zusammenhänge?" # NEU
+            "\n    * **Kombinierte & Segment-spezifische Muster:** Suche aktiv nach Mustern, die erst durch die Kombination mehrerer Variablen oder durch Betrachtung spezifischer Datensegmente offensichtlich werden." 
+            "\n    * **Kontraintuitive Erkenntnisse:** Identifiziere Erkenntnisse, die etablierten Annahmen widersprechen könnten oder eine neue Perspektive auf die Geschäftsdaten eröffnen." 
+            "\n    * **Langsame, stetige Veränderungen:** Analysiere, ob es langsame, aber stetige Veränderungen gibt, die über längere Zeiträume signifikant werden, auch wenn sie kurzfristig unscheinbar wirken." 
+            "\n    * **Indirekte Zusammenhänge:** Achte auf Korrelationen zwischen scheinbar unabhängigen Metriken. Gibt es indirekte Zusammenhänge?" 
             "\n4.  **Kontextualisierung und Quantifizierung:** Beschreibe jede Erkenntnis klar und verständlich. Gib immer den betroffenen Bereich (z.B. Produktgruppe, Region), den Zeitraum und, wenn möglich, eine Quantifizierung des Impacts (z.B. 'Umsatzsteigerung um 15%', 'Retourenquote 5% über Durchschnitt')."
             "\n5.  **Belege deine Aussagen:** Für jede Erkenntnis, liefere konkrete Datenbeispiele (z.B. 'Zeile 42: Umsatz Produkt A in Q3 war X, während der Durchschnitt Y war') oder verweise auf die relevanten Zeilen/Spalten der bereitgestellten CSV-Daten."
             "\n6.  **Beziehe historische Erkenntnisse ein:** Wenn historische Erkenntnisse bereitgestellt wurden, kommentiere, ob ähnliche Muster in den aktuellen Daten fortbestehen, sich geändert haben oder ob erwartete Muster ausbleiben. Identifiziere auch vollständig neue Muster, die in den historischen Daten nicht vorkamen."
             "\n\n"
             "**Wichtige Anweisungen für deine Antwort:**"
-            "\n- **Fokus auf Relevanz und Überraschungswert:** Nicht jede kleine Schwankung ist eine Erkenntnis. Finde das, was wirklich ins Auge sticht oder eine geschäftliche Entscheidung beeinflussen könnte. Priorisiere Erkenntnisse, die für einen menschlichen Analysten, der die Daten nur oberflächlich sichtet, nicht sofort ersichtlich wären oder als überraschend gelten." # NEU und angepasst
+            "\n- **Fokus auf Relevanz und Überraschungswert:** Nicht jede kleine Schwankung ist eine Erkenntnis. Finde das, was wirklich ins Auge sticht oder eine geschäftliche Entscheidung beeinflussen könnte. Priorisiere Erkenntnisse, die für einen menschlichen Analysten, der die Daten nur oberflächlich sichtet, nicht sofort ersichtlich wären oder als überraschend gelten." 
             "\n- **Präzision:** Sei exakt in deinen Beschreibungen und Datenreferenzen."
             "\n- **Konsistenz:** Achte auf logische Zusammenhänge in deiner Analyse. Beziehe auch bekannte Muster oder historische Erkenntnisse (falls bereitgestellt) in deine Betrachtung ein, um deren Fortbestehen, Abweichungen oder deren Fehlen zu kommentieren."
             "\n- **Erkennung neuer Muster:** Sei explizit angewiesen, auch gänzlich neue oder unerwartete Muster zu identifizieren, die nicht unbedingt bekannten Kategorien entsprechen oder in bereitgestellten historischen Daten auftauchten."
@@ -236,7 +234,6 @@ def perform_llm_analysis(
             "```\n"
             "Wenn keine signifikanten Erkenntnisse gefunden werden, gib ein leeres 'insights'-Array zurück und eine entsprechende Zusammenfassung. Sei absolut präzise bei der Angabe von Datenpunkten, die deine Erkenntnisse stützen. **Beziehe dich auf die erste Zeile der CSV als Spaltenüberschriften.**"
         )
-        # KORRIGIERTER TEIL: Durchgehend user_prompt_content_initial verwenden
         user_prompt_content_initial = (
             "Bitte analysiere die folgenden Geschäftsdaten gemäß den Anweisungen im System-Prompt. "
             "Konzentriere dich darauf, die *allerwichtigsten* Erkenntnisse zu identifizieren, die einem Business-Anwender helfen, bessere Entscheidungen zu treffen. "
