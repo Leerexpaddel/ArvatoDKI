@@ -1,0 +1,19 @@
+# Virtuelle Umgebung
+venv/
+.venv/
+*/venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Sensible Umgebungsdateien
+.env
+*.env
+!.env.example # Falls du eine Beispieldatei hast, die du committen willst
+
+# IDE/Editor-spezifische Ordner (optional, aber nützlich)
+.idea/
+.vscode/
