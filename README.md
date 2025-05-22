@@ -83,26 +83,6 @@ dnspython
 
 Die Anwendung benötigt API-Schlüssel und weitere Konfigurationsdaten in einer `.env`-Datei. Diese ist **nicht im Repository enthalten** (siehe `.gitignore`) – aus Sicherheitsgründen.
 
-#### Empfohlene Methode: `.env.example` verwenden
-
-1. Suchen Sie im Projektverzeichnis die Datei `.env.example`.
-2. Kopieren Sie diese Datei und benennen Sie sie um zu `.env`:
-
-**macOS / Linux:**
-
-```bash
-cp .env.example .env
-```
-
-**Windows:**
-
-```cmd
-copy .env.example .env
-```
-
-3. Öffnen Sie `.env` mit einem Editor und tragen Sie Ihre echten Werte ein.
-
-#### Manuelle Erstellung (wenn keine `.env.example` vorhanden ist)
 
 Erstellen Sie eine Datei `.env` mit folgendem Inhalt:
 
@@ -130,8 +110,7 @@ MONGO_COLLECTION_RAW_DATA="raw_data_summaries"
 ├── db_manager.py
 ├── utils.py
 ├── requirements.txt
-├── README.md
-└── .env.example        # Vorlage für Umgebungsvariablen
+└──  README.md 
 ```
 
 *(Die lokale `.env` und der `venv`-Ordner sind nicht versioniert und erscheinen hier nicht.)*
