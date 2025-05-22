@@ -8,7 +8,7 @@ Willkommen zur Attention Guiding App! Diese Anwendung hilft Ihnen, wichtige Tren
 * **Zusätzlicher Kontext:** Geben Sie zusätzlichen Text als Kontext oder spezifische Anweisungen für die KI-Analyse ein oder laden Sie eine Textdatei als Prompt hoch.
 * **KI-gestützte Analyse:** Lassen Sie Ihre Daten von einem Großen Sprachmodell (LLM) analysieren, um Kern-Erkenntnisse, Datenübersichten, Zusammenfassungen und potenzielle nächste Fragen zu erhalten.
 * **Zweistufiger Analyseprozess:** Eine Initialanalyse mit anschließender Selbstüberprüfung durch die KI sorgt für höhere Qualität und Formatkonsistenz.
-* **MongoDB-Integration (optional):** Nutzen Sie MongoDB, um historische Erkenntnisse in die Analyse einzubeziehen.
+* **MongoDB-Integration (optional):** Nutzen Sie MongoDB, um historische Erkenntnisse in die Analyse einzubeziehen oder Analyseergebnisse zu speichern.
 * **Ergebnisse speichern:** Speichern Sie die generierten Erkenntnisse nach Bestätigung in einer MongoDB-Datenbank.
 * **Ergebnisse herunterladen:** Laden Sie die vollständigen Analyseergebnisse als JSON-Datei herunter.
 * **Benutzerfreundliche Oberfläche:** Eine klare, schrittweise Führung durch den Analyseprozess.
@@ -17,27 +17,28 @@ Willkommen zur Attention Guiding App! Diese Anwendung hilft Ihnen, wichtige Tren
 
 Bevor Sie die Anwendung starten können, stellen Sie sicher, dass Sie Folgendes installiert und eingerichtet haben:
 
-1. **Python 3.9 oder höher:** Die Anwendung wurde mit Python 3.13 getestet.
+1. **Python 3.9 oder höher** (getestet mit Python 3.13)  
    👉 [Python herunterladen](https://www.python.org/downloads/)
-
-2. **pip:** Der Python-Paketmanager (wird normalerweise mit Python installiert).
-
-3. **OpenAI API Key:** Für die KI-Analyse ist ein API-Schlüssel von OpenAI erforderlich.
+2. **pip:** Der Python-Paketmanager (normalerweise mit Python installiert)
+3. **Git:** Für das Klonen des Repositories  
+   👉 [Git herunterladen](https://git-scm.com/downloads)
+4. **OpenAI API Key** (erforderlich für die Analyse)  
    👉 [OpenAI Plattform](https://platform.openai.com/account/api-keys)
-
-4. **MongoDB Atlas Konto (optional, aber empfohlen):** Für Speicherung und Abruf historischer Daten.
+5. **MongoDB Atlas Konto (optional, aber empfohlen)**  
    👉 [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 
    **Wichtig für MongoDB:**
-
-   * Notieren Sie sich Ihre **Verbindungs-URI**.
-   * Fügen Sie Ihre **aktuelle IP-Adresse zur IP-Whitelist** hinzu.
+   * Notieren Sie sich Ihre **Verbindungs-URI**
+   * Fügen Sie Ihre **aktuelle IP-Adresse zur IP-Whitelist** in MongoDB Atlas hinzu
 
 ## Installation und Einrichtung
 
-### 1. Projekt herunterladen
+### 1. Projekt herunterladen (Klonen)
 
-Falls Sie das Projekt noch nicht haben, klonen Sie es per Git oder laden Sie es als ZIP-Datei herunter und entpacken Sie es.
+```bash
+git clone https://github.com/Leerexpaddel/attention-guiding-app.git
+cd attention-guiding-app
+````
 
 ### 2. Virtuelle Umgebung einrichten
 
@@ -47,7 +48,7 @@ Erstellen Sie eine virtuelle Umgebung:
 python -m venv venv
 ```
 
-Aktivieren Sie die virtuelle Umgebung:
+Aktivieren Sie sie:
 
 **Unter Windows:**
 
@@ -63,15 +64,13 @@ source venv/bin/activate
 
 ### 3. Abhängigkeiten installieren
 
-Installieren Sie die Abhängigkeiten über `requirements.txt`:
-
 ```bash
 pip install -r requirements.txt
 ```
 
-Falls Sie die Datei selbst anlegen müssen, sollte sie folgenden Inhalt haben:
+Falls `requirements.txt` fehlt oder leer ist, sollte sie folgenden Inhalt enthalten:
 
-```
+```txt
 streamlit
 pandas
 python-dotenv
@@ -82,84 +81,94 @@ dnspython
 
 ### 4. Umgebungsvariablen konfigurieren
 
-Erstellen Sie eine `.env`-Datei im Projektverzeichnis und tragen Sie Folgendes ein:
+Die Anwendung benötigt API-Schlüssel und weitere Konfigurationsdaten in einer `.env`-Datei. Diese ist **nicht im Repository enthalten** (siehe `.gitignore`) – aus Sicherheitsgründen.
+
+#### Empfohlene Methode: `.env.example` verwenden
+
+1. Suchen Sie im Projektverzeichnis die Datei `.env.example`.
+2. Kopieren Sie diese Datei und benennen Sie sie um zu `.env`:
+
+**macOS / Linux:**
+
+```bash
+cp .env.example .env
+```
+
+**Windows:**
+
+```cmd
+copy .env.example .env
+```
+
+3. Öffnen Sie `.env` mit einem Editor und tragen Sie Ihre echten Werte ein.
+
+#### Manuelle Erstellung (wenn keine `.env.example` vorhanden ist)
+
+Erstellen Sie eine Datei `.env` mit folgendem Inhalt:
 
 ```dotenv
 # OpenAI API Key (erforderlich)
-OPENAI_API_KEY="sk-<...IHREN_SCHLÜSSEL_HIER_EINSETZEN...>"
-
-# (Optional) Modellwahl – Standard ist "gpt-4o-mini"
-# OPENAI_MODEL="gpt-4o-mini"
-
-# (Optional) MongoDB Atlas URI
-MONGO_URI="mongodb+srv://<...IHREN_MONGODB_URI_HIER_EINSETZEN...>"
-
-# Name der MongoDB-Datenbank
+OPENAI_API_KEY="sk-IHREN_OPENAI_API_SCHLUESSEL_HIER_EINSETZEN"
+MONGO_URI="mongodb+srv://Leerex:1ngHo5IaHJGSEVwE@arvato.0owvnmp.mongodb.net/?retryWrites=true&w=majority&appName=Arvato"
 MONGO_DB_NAME="attention_guiding_db"
-
-# MongoDB Collections
 MONGO_COLLECTION_INSIGHTS="insights"
 MONGO_COLLECTION_RAW_DATA="raw_data_summaries"
-```
-
-**Hinweis:** Speichern Sie die Datei **ohne** `.txt`-Endung – nur `.env`.
-
-## Projektstruktur
-
-Ihre Projektstruktur sollte folgendermaßen aussehen:
 
 ```
+**Hinweis:**
+
+* Die `.env`-Datei **darf niemals** zu Git hinzugefügt werden. Dies wird durch die `.gitignore` verhindert.
+* Speichern Sie sie exakt als `.env` (nicht `.env.txt` o. Ä.)
+
+**Projektstruktur (Beispiel)**
+
+```dotenv
 .
-├── .env                      # Umgebungsvariablen
-├── app.py                   # Hauptanwendung (Streamlit)
-├── llm_analyzer.py          # Logik für LLM-Analyse
-├── db_manager.py            # MongoDB-Verwaltung
-├── utils.py                 # Hilfsfunktionen
-├── requirements.txt         # Python-Abhängigkeiten
-└── README.md                # Anleitung
+├── .gitignore
+├── app.py
+├── llm_analyzer.py
+├── db_manager.py
+├── utils.py
+├── requirements.txt
+├── README.md
+└── .env.example        # Vorlage für Umgebungsvariablen
 ```
+
+*(Die lokale `.env` und der `venv`-Ordner sind nicht versioniert und erscheinen hier nicht.)*
 
 ## Anwendung starten
 
-1. Aktivieren Sie die virtuelle Umgebung:
+Aktivieren Sie Ihre virtuelle Umgebung und starten Sie die Streamlit-App:
 
-   ```bash
-   source venv/bin/activate
-   ```
+```bash
+streamlit run app.py
+```
 
-   *(unter Windows: `.\venv\Scripts\activate`)*
-
-2. Starten Sie die App:
-
-   ```bash
-   streamlit run app.py
-   ```
-
-Die App sollte sich automatisch im Webbrowser unter `http://localhost:8501` öffnen.
+Die App öffnet sich im Browser unter: [http://localhost:8501](http://localhost:8501)
 
 ## Verwendung der App
 
-1. **Datei hochladen:** Klicken Sie auf "Wählen Sie eine Excel-, CSV- oder Textdatei aus".
+1. **Datei hochladen:** Excel-, CSV- oder Textdatei auswählen.
+2. **Kontext hinzufügen:** Text eingeben oder Textdatei hochladen.
+3. **(Optional) MongoDB verwenden:**
 
-2. **Zusätzlicher Kontext:** Geben Sie Anweisungen oder laden Sie eine zusätzliche Textdatei hoch.
+   * Aktivieren Sie die Checkboxen:
 
-3. **MongoDB-Nutzung (optional):**
+     * "MongoDB für neue Analyse nutzen?"
+     * "MongoDB für diese Folgeanalyse nutzen?"
+   * Die Ergebnisse werden verwendet oder gespeichert, je nach Verfügbarkeit der Verbindung.
+4. **Analyse starten:**
 
-   * Checkbox aktivieren, um historische Erkenntnisse aus MongoDB zu nutzen.
-   * Ist die Verbindung erfolgreich, werden ältere Einträge automatisch beim Prompt ergänzt.
+   * 🚀 Neue Analyse starten
+   * 🚀 Folgeanalyse zu dieser Frage starten
+5. **Ergebnisse anzeigen lassen:**
 
-4. **Analyse starten:** Klicken Sie auf "🚀 Analyse starten".
-
-5. **Ergebnisse prüfen:** Die App zeigt:
-
-   * **Kern-Erkenntnisse**
-   * **Datenübersicht**
-   * **Gesamt-Zusammenfassung**
-   * **Nächste Schritte / Fragen**
-
+   * Kern-Erkenntnisse
+   * Datenübersicht
+   * Gesamt-Zusammenfassung
+   * Nächste Schritte / Fragen
 6. **Ergebnisse speichern oder exportieren:**
 
-   * 💾 **MongoDB speichern**
-   * ⬇️ **JSON herunterladen**# attention-guiding-app
-# attention-guiding-app
-# attention-guiding-app
+   * 💾 In MongoDB speichern (sofern verbunden)
+   * ⬇️ JSON herunterladen
+
