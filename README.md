@@ -36,7 +36,7 @@ Bevor Sie die Anwendung starten können, stellen Sie sicher, dass Sie Folgendes 
 ### 1. Projekt herunterladen (Klonen)
 
 ```bash
-
+git clone https://github.com/Leerexpaddel/ArvatoDKI.git
 ````
 
 ### 2. Virtuelle Umgebung einrichten
