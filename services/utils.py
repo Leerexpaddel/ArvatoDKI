@@ -1,23 +1,26 @@
-# utils.py
 import re
 import pandas as pd
 
 def extract_json_from_string(text):
     """
-    Versucht, einen JSON-Block aus einem gegebenen String zu extrahieren.
+    Extrahiert einen JSON-Block aus einem gegebenen String.
     Nützlich, wenn das LLM zusätzlichen Text um das JSON herum ausgibt.
+    Gibt den JSON-String zurück oder None, falls kein JSON gefunden wurde.
     """
     match = re.search(r"```json\s*(\{.*?\})\s*```", text, re.DOTALL)
     if match:
         return match.group(1)
-    
     match = re.search(r"(\{.*?\})", text, re.DOTALL)
     if match:
         return match.group(1)
-        
     return None
 
 def get_basic_dataframe_summary(df):
+    """
+    Erstellt eine Zusammenfassung eines DataFrames mit Infos zu Zeilen, Spalten,
+    Datentypen, numerischen und kategorischen Spalten.
+    Gibt ein Dictionary mit den wichtigsten Kennzahlen zurück.
+    """
     summary = {
         "num_rows": len(df),
         "num_cols": len(df.columns),

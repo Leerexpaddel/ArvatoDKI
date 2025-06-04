@@ -1,0 +1,135 @@
+.stApp {
+    background-color: #1A1A1A; /* Very dark gray background */
+    color: #F5F5F7; /* Light text color */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    padding: 2rem; /* More padding around the content */
+    font-size: 16px; /* Increased base font size for readability */
+}
+
+/* Header/Title styling */
+h1 {
+    color: #FFFFFF; /* White for main title */
+    font-weight: 600; /* Semi-bold */
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem; /* Adjust spacing */
+}
+
+h2, h3, h4 {
+    color: #E0E0E0; /* Slightly off-white for subheaders */
+    font-weight: 500;
+    margin-top: 1.5rem; /* Adjust spacing */
+    margin-bottom: 0.75rem;
+}
+
+/* Markdown text */
+.stMarkdown {
+    color: #B0B0B0; /* Lighter gray for body text */
+    line-height: 1.6;
+    font-size: 1rem; /* Ensure markdown text is readable */
+}
+
+/* Containers/Cards - for a floating effect */
+.stContainer {
+    background-color: #2C2C2E; /* Darker gray for cards */
+    border-radius: 12px; /* Rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* More prominent shadow for dark mode */
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* File Uploader */
+.stFileUploader {
+    border: 2px dashed #48484A; /* Darker gray dashed border */
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 1.5rem;
+    background-color: #3A3A3C; /* Darker background for uploader */
+}
+.stFileUploader label {
+    color: #F5F5F7 !important; /* Ensure label text is visible */
+}
+
+/* Buttons */
+.stButton > button {
+    background-color: #0A84FF; /* Apple blue for dark mode */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(10, 132, 255, 0.3); /* Subtle blue shadow */
+}
+
+.stButton > button:hover {
+    background-color: #007AFF; /* Slightly darker blue on hover */
+    transform: translateY(-1px); /* Slight lift effect */
+}
+
+.stButton > button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Info/Success/Warning/Error messages */
+.stAlert {
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: #F5F5F7; /* Default text color for alerts */
+    text-align: left !important;
+}
+.stAlert.stAlert-success { background-color: #2A5C3D; border-left: 5px solid #4CAF50; } /* Darker green */
+.stAlert.stAlert-warning { background-color: #6A5B2C; border-left: 5px solid #FFC107; } /* Darker orange */
+.stAlert.stAlert-info { background-color: #2F5F78; border-left: 5px solid #2196F3; } /* Darker blue */
+.stAlert.stAlert-error { background-color: #7A3F45; border-left: 5px solid #F44336; } /* Darker red */
+
+/* Dataframe styling */
+.stDataFrame {
+    border-radius: 8px;
+    overflow: hidden; /* Ensures rounded corners apply to content */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.stDataFrame table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+}
+.stDataFrame th {
+    background-color: #3A3A3C; /* Darker header background */
+    color: #F5F5F7;
+    font-weight: 500;
+}
+.stDataFrame td {
+    background-color: #2C2C2E; /* Darker cell background */
+    color: #E0E0E0;
+}
+
+/* Expander styling */
+.stExpander {
+    background-color: #2C2C2E; /* Darker background */
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.stExpander .streamlit-expanderHeader {
+    font-weight: 500;
+    color: #0A84FF; /* Blue header */
+}
+
+/* Streamlit specific overrides for better dark mode */
+div[data-testid="stToolbar"] {
+    background-color: #1A1A1A; /* Toolbar background */
+}
+div[data-testid="stSidebar"] {
+    background-color: #2C2C2E; /* Sidebar background */
+}
+div[data-testid="stVerticalBlock"] > div:first-child {
+    padding-top: 0rem; /* Reduce top padding if needed */
+}
+div[data-testid="stHorizontalBlock"] {
+    gap: 1.5rem; /* Adjust gap between columns for symmetry */
+}
