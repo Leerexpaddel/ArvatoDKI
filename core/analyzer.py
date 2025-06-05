@@ -5,8 +5,11 @@ import streamlit as st
 import pandas as pd
 from openai import OpenAI
 
-from services.utils import extract_json_from_string, get_basic_dataframe_summary 
-from services.db import save_insight, get_similar_insights 
+
+from services.utils import extract_json_from_string, get_basic_dataframe_summary, \
+                           add_calculated_kpis_to_df, get_higher_level_aggregations, get_top_n_anomalies
+from services.db import save_insight, get_similar_insights
+
 
 def get_openai_client_internal():
     """
@@ -37,48 +40,26 @@ def perform_llm_analysis(
     if openai_client is None:
         return {"error": "OpenAI Client ist nicht initialisiert. Bitte API-Schlüssel prüfen."}
 
-    data_as_csv_string = dataframe.to_csv(index=False)
-    detailed_data_summary_dict = get_basic_dataframe_summary(dataframe)
-
     # Datenzusammenfassung für das LLM
-    formatted_summary_for_llm = "**Detaillierte Datenübersicht (vorab generiert für Ihre Information):**\n"
-    formatted_summary_for_llm += f"- Anzahl Zeilen: {detailed_data_summary_dict['num_rows']}\n"
-    formatted_summary_for_llm += f"- Anzahl Spalten: {detailed_data_summary_dict['num_cols']}\n"
-    formatted_summary_for_llm += "- Spaltennamen und erkannte Datentypen:\n"
-    if isinstance(detailed_data_summary_dict.get('column_dtypes'), dict):
-        for col, dtype in detailed_data_summary_dict['column_dtypes'].items():
-            formatted_summary_for_llm += f"  - '{col}': {dtype}\n"
+    # 1. Berechne KPIs und füge sie als neue Spalten zum DataFrame hinzu
+    st.info("Schritt 1/4: Berechne Performance-Indikatoren (KPIs) pro Zeile...")
+    df_with_kpis = add_calculated_kpis_to_df(dataframe.copy())
 
-    if detailed_data_summary_dict.get('numerical_summary'):
-        formatted_summary_for_llm += "\n- Statistische Zusammenfassung für numerische Spalten:\n"
-        if isinstance(detailed_data_summary_dict['numerical_summary'], dict):
-            for col, stats in detailed_data_summary_dict['numerical_summary'].items():
-                formatted_summary_for_llm += f"  - Spalte '{col}':\n"
-                if isinstance(stats, dict):
-                    for stat_name, stat_value in stats.items():
-                        formatted_summary_for_llm += f"    - {stat_name}: {stat_value}\n"
+    # 2. Erzeuge eine Basis-Zusammenfassung des angereicherten DataFrames
+    st.info("Schritt 2/4: Erstelle eine detaillierte Datenübersicht...")
+    detailed_data_summary_dict = get_basic_dataframe_summary(df_with_kpis)
 
-    if detailed_data_summary_dict.get('categorical_summary'):
-        formatted_summary_for_llm += "\n- Zusammenfassung für kategorische/textuelle Spalten:\n"
-        if isinstance(detailed_data_summary_dict['categorical_summary'], dict):
-            for col, stats in detailed_data_summary_dict['categorical_summary'].items():
-                formatted_summary_for_llm += f"  - Spalte '{col}':\n"
-                if isinstance(stats, dict):
-                    formatted_summary_for_llm += f"    - Anzahl einzigartiger Werte: {stats.get('unique_values')}\n"
-                    top_values_for_json = {} 
-                    if isinstance(stats.get('top_values'), dict):
-                        for k, v in stats['top_values'].items(): 
-                            if isinstance(k, pd.Timestamp):
-                                top_values_for_json[k.isoformat()] = v 
-                            else:
-                                top_values_for_json[str(k)] = v 
-                        if top_values_for_json:
-                            formatted_summary_for_llm += f"    - Häufigste Werte (Top 5): {json.dumps(top_values_for_json)}\n" 
-                        else:
-                            formatted_summary_for_llm += f"    - Häufigste Werte (Top 5): Keine oder konnten nicht serialisiert werden.\n"
-                    else:
-                        formatted_summary_for_llm += f"    - Häufigste Werte (Top 5): Keine oder ungültiges Format.\n"
-    formatted_summary_for_llm += "---\n"
+    # 3. Erzeuge höhere Aggregationen (für globale Vergleiche)
+    st.info("Schritt 3/4: Erstelle globale Aggregationen für übergeordnete Trends...")
+    higher_level_aggs_dict = get_higher_level_aggregations(df_with_kpis) # Ist jetzt ein Dict
+    global_agg_country_pm_csv = higher_level_aggs_dict.get("by_country_payment_method", "Keine Aggregation nach Land & Zahlungsmethode verfügbar.")
+    global_agg_country_csv = higher_level_aggs_dict.get("by_country", "Keine Aggregation nach Land verfügbar.") # NEU
+    global_agg_pm_csv = higher_level_aggs_dict.get("by_payment_method", "Keine Aggregation nach Zahlungsmethode verfügbar.") # NEU
+
+
+    # 4. Extrahiere Top N/Auffälligkeiten aus den ursprünglichen Zeilen
+    st.info("Schritt 4/4: Extrahiere spezifische Auffälligkeiten und Extremwerte...")
+    anomalies_csvs = get_top_n_anomalies(df_with_kpis, n=7) # N kann angepasst werden, um Token zu sparen
 
     # Historische Insights aus MongoDB
     retrieved_historical_insights = []
@@ -128,61 +109,112 @@ def perform_llm_analysis(
     # Prompt-Handling
     if follow_up_question and previous_analysis_results:
         st.info(f"Führe fokussierte Folgeanalyse für die Frage durch: '{follow_up_question}'...")
-        with open("prompts/system_prompt_follow_up.txt", "r", encoding="utf-8") as f:
-            system_prompt_follow_up = f.read()
-        user_prompt_content = (
-            "Bitte beantworte die folgende spezifische Frage basierend auf den bereitgestellten Daten und der vorherigen Analyse. "
-            "Konzentriere dich voll und ganz auf die Beantwortung der Frage.\n\n"
-            f"**Die zu untersuchende Folgefrage lautet:**\n'{follow_up_question}'\n\n"
-            "**Hier ist die für die Analyse relevante Datenübersicht (vorab generiert):**\n"
-            f"{formatted_summary_for_llm}\n"
-            f"{previous_insights_summary_for_prompt}\n"
-            "**Hier sind die zu analysierenden Originaldaten im CSV-Format (die erste Zeile ist der Header):**\n"
-            f"{data_as_csv_string}"
-        )
+        # KORREKTUR: Pfad zur system_prompt_follow_up.txt angepasst
+        system_prompt_follow_up_path = os.path.join(os.path.dirname(__file__), '../prompts/system_prompt_follow_up.txt')
+        with open(system_prompt_follow_up_path, "r", encoding="utf-8") as f:
+            system_prompt = f.read() # system_prompt holds the content of system_prompt_follow_up.txt
+
+        user_content = f"""
+            **Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
+            Diese Übersicht enthält Spalteninformationen, Datentypen und grundlegende Statistiken (Min, Max, Durchschnitt)
+            für alle Originalspalten und die neu berechneten KPI-Spalten.
+            ```json
+            {json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}
+            ```
+
+            **Globale Aggregationen für übergeordnete Trends und Vergleiche (pro Land/Zahlungsmethode über alle Monate):**
+            Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
+            zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
+            ```csv
+            {global_agg_country_pm_csv}
+            ```
+
+            **Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
+            Diese Abschnitte heben einzelne Zeilen aus dem erweiterten Original-DataFrame hervor,
+            die besonders hohe oder niedrige Werte für bestimmte Kennzahlen aufweisen und
+            möglicherweise genauer untersucht werden sollten. Diese Zeilen enthalten alle Originalspalten
+            und die berechneten KPIs für diesen spezifischen Eintrag.
+
+            **Top {anomalies_csvs.get('n', 5)} Transaktionen nach Bruttoumsatz:**
+            ```csv
+            {anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}
+            ```
+
+            **Top {anomalies_csvs.get('n', 5)} höchste Retourenquoten:**
+            ```csv
+            {anomalies_csvs.get('top_return_rate_eur', 'Nicht verfügbar.')}
+            ```
+
+            **Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**
+            ```csv
+            {anomalies_csvs.get('all_write_offs_gt_0', 'Nicht verfügbar.')}
+            ```
+
+            **Top {anomalies_csvs.get('n', 5)} höchste Rückbuchungsquoten:**
+            ```csv
+            {anomalies_csvs.get('top_chargeback_rate_eur', 'Nicht verfügbar.')}
+            ```
+
+            **Top {anomalies_csvs.get('n', 5)} höchste Werte in Mahnstufe 2 (höchstes Risiko):**
+            ```csv
+            {anomalies_csvs.get('top_dunning_level2_eur', 'Nicht verfügbar.')}
+            ```
+
+            {previous_insights_summary_for_prompt}
+            **Deine spezifische Folgefrage:** {follow_up_question}
+        """
         if additional_context_text:
-            user_prompt_content += f"\n\n**Ursprünglicher zusätzlicher Kontext/Anweisungen vom Benutzer (für den Gesamtkontext relevant):**\n{additional_context_text}"
-        user_prompt_content += historical_insights_context
+            user_content += f"\n\n**Ursprünglicher zusätzlicher Kontext/Anweisungen vom Benutzer (für den Gesamtkontext relevant):**\n{additional_context_text}"
+        user_content += historical_insights_context
+
         messages_for_llm = [
-            {"role": "system", "content": system_prompt_follow_up},
-            {"role": "user", "content": user_prompt_content}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
         ]
-        st.info("Führe fokussierte LLM-Analyse für die Folgefrage durch...")
-    else:
+
+    else: # Initial analysis
         st.info("Bereite Daten für die Erst-Analyse vor...")
-        with open("prompts/system_prompt_initial.txt", "r", encoding="utf-8") as f:
-            system_prompt_initial = f.read()
-        user_prompt_content_initial = (
-            "Bitte analysiere die folgenden Geschäftsdaten gemäß den Anweisungen im System-Prompt. "
-            "Konzentriere dich darauf, die *allerwichtigsten* Erkenntnisse zu identifizieren, die einem Business-Anwender helfen, bessere Entscheidungen zu treffen. "
-            "Sei proaktiv und denke mit!\n\n"
-            f"{formatted_summary_for_llm}"
-            "\n\n**Beispiel für eine gute kontextualisierte Erkenntnis (basierend auf fiktiven Daten):**\n"
-            "```json\n"
-            "    {\n"
-            "      \"insight_id\": \"RETURN_SPIKE_CH_001\",\n"
-            "      \"title\": \"Starker Anstieg der Retouren für Produkt 'Alpha' in der Schweiz im September 2024\",\n"
-            "      \"type\": \"Anomalie\",\n"
-            "      \"description\": \"Die Retourenquote für das Produkt 'Alpha' in der Schweiz ist im September 2024 auf 18% gestiegen, was deutlich über der durchschnittlichen Retourenquote von 5% für dieses Produkt in anderen Regionen und Zeiträumen liegt. Dies deutet auf ein spezifisches Problem hin.\",\n"
-            "      \"affected_area\": \"Produkt 'Alpha', Region Schweiz\",\n"
-            "      \"period\": \"September 2024\",\n"
-            "      \"quantitative_impact\": \"Retourenquote von 18% (vs. 5% Durchschnitt); ca. 150 zusätzliche Retouren\",\n"
-            "      \"supporting_data_points\": [\n"
-            "           {\"row_reference\": \"Filter: Produkt='Alpha', Region='Schweiz', Monat='2024-09'\", \"column_reference\": \"Retourenquote\", \"value\": \"18%\", \"explanation\": \"Dieser Wert ist der höchste gemessene für dieses Produkt in den letzten 12 Monaten.\"},\n"
-            "           {\"row_reference\": \"Filter: Produkt='Alpha', Region='Schweiz', Monat='2024-08'\", \"column_reference\": \"Retourenquote\", \"value\": \"6%\", \"explanation\": \"Vormonatswert zum Vergleich.\"}\n"
-            "      ],\n"
-            "      \"confidence_level\": \"Hoch\"\n"
-            "    }\n"
-            "```\n\n"
-            "**Hier sind die zu analysierenden Daten im CSV-Format (die erste Zeile ist der Header):**\n\n"
-            f"{data_as_csv_string}"
-        )
+        system_prompt_initial_path = os.path.join(os.path.dirname(__file__), '../prompts/system_prompt_initial.txt')
+        with open(system_prompt_initial_path, 'r', encoding='utf-8') as f:
+            system_prompt = f.read()
+
+        user_content = f"""
+            **Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
+            ```json
+            {json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}
+            ```
+
+            **Globale Aggregationen für übergeordnete Trends und Vergleiche:**
+            
+            **1. Aggregation pro Land UND Zahlungsmethode (über alle Monate):**
+            Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
+            zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
+            ```csv
+            {global_agg_country_pm_csv}
+            ```
+
+            **2. Aggregation NUR pro Land (über alle Monate und Zahlungsmethoden):**
+            Diese Tabelle fasst die wichtigsten KPIs pro Land zusammen, um die Performance jedes Landes gesamt zu bewerten.
+            ```csv
+            {global_agg_country_csv}
+            ```
+
+            **3. Aggregation NUR pro Zahlungsmethode (über alle Monate und Länder):**
+            Diese Tabelle fasst die wichtigsten KPIs pro Zahlungsmethode zusammen, um die Performance jeder Zahlungsmethode gesamt zu bewerten.
+            ```csv
+            {global_agg_pm_csv}
+            ```
+
+            **Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
+            {anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}
+            # ... (und die anderen Anomalie-CSVs) ...
+        """
         if additional_context_text:
-            user_prompt_content_initial += f"\n\n**Zusätzlicher Kontext/Anweisungen vom Benutzer:**\n{additional_context_text}"
-        user_prompt_content_initial += historical_insights_context
+            user_content += f"\n\n**Zusätzlicher Kontext/Anweisungen vom Benutzer:**\n{additional_context_text}"
+        user_content += historical_insights_context
         messages_for_llm = [
-            {"role": "system", "content": system_prompt_initial},
-            {"role": "user", "content": user_prompt_content_initial}
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content}
         ]
         st.info("Führe erste LLM-Analyse durch...")
 
@@ -190,7 +222,7 @@ def perform_llm_analysis(
     initial_llm_response_content = None
     try:
         completion = openai_client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
             messages=messages_for_llm, 
             temperature=0.0,
             seed=123,
@@ -208,10 +240,23 @@ def perform_llm_analysis(
     with open("prompts/review_system_prompt.txt", "r", encoding="utf-8") as f:
         review_system_prompt = f.read()
     review_user_prompt_content = (
-        "Hier ist die vorab generierte Datenübersicht, die auch der ersten Analyse (oder der aktuellen Stufe der Folgeanalyse) zur Verfügung stand:\n"
-        f"{formatted_summary_for_llm}\n"
-        "Hier sind die Originaldaten im CSV-Format:\n\n"
-        f"{data_as_csv_string}\n\n"
+        "Hier ist die detaillierte Datenzusammenfassung der angereicherten Daten (original):"
+        f"```json\n{json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}\n```\n"
+
+        "Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n"
+        f"**1. Aggregation pro Land UND Zahlungsmethode:**\n```csv\n{global_agg_country_pm_csv}\n```\n"
+        f"**2. Aggregation NUR pro Land:**\n```csv\n{global_agg_country_csv}\n```\n"
+        f"**3. Aggregation NUR pro Zahlungsmethode:**\n```csv\n{global_agg_pm_csv}\n```\n"
+
+        "Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n"
+        f"```csv\n{global_agg_country_pm_csv}\n```\n"
+
+        "Hier sind die spezifischen Auffälligkeiten und Extremwerte, die der ersten Analyse zur Verfügung standen:\n"
+        f"**Top {anomalies_csvs.get('n', 5)} Transaktionen nach Bruttoumsatz:**\n```csv\n{anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}\n```\n"
+        f"**Top {anomalies_csvs.get('n', 5)} höchste Retourenquoten:**\n```csv\n{anomalies_csvs.get('top_return_rate_eur', 'Nicht verfügbar.')}\n```\n"
+        f"**Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**\n```csv\n{anomalies_csvs.get('all_write_offs_gt_0', 'Nicht verfügbar.')}\n```\n"
+        f"**Top {anomalies_csvs.get('n', 5)} höchste Rückbuchungsquoten:**\n```csv\n{anomalies_csvs.get('top_chargeback_rate_eur', 'Nicht verfügbar.')}\n```\n"
+        f"**Top {anomalies_csvs.get('n', 5)} höchste Werte in Mahnstufe 2 (höchstes Risiko):**\n```csv\n{anomalies_csvs.get('top_dunning_level2_eur', 'Nicht verfügbar.')}\n```\n"
     )
     if follow_up_question:
         review_user_prompt_content += (
@@ -223,10 +268,10 @@ def perform_llm_analysis(
     review_user_prompt_content += (
         "Hier ist die Analyse (oder Folgeanalyse), die zuvor generiert wurde und nun überprüft werden soll:\n\n"
         f"{initial_llm_response_content}\n\n"
-        "Bitte überprüfe diese Analyse gründlich anhand der oben genannten Kriterien und der bereitgestellten Originaldaten (CSV und Zusammenfassung). "
+        "Bitte überprüfe diese Analyse gründlich anhand der oben genannten Kriterien und der bereitgestellten Daten. "
         "Wenn es eine Folgeanalyse war, stelle besonders sicher, dass die spezifische Frage umfassend und korrekt beantwortet wurde. "
         "Korrigiere die Analyse, falls notwendig, und gib die finale, korrigierte (oder bestätigte) JSON-Antwort aus. "
-        "Stelle sicher, dass die Ausgabe dem vorgegebenen JSON-Schema entspricht und alle Details wie 'supporting_data_points' korrekt und nachvollziehbar auf die CSV-Daten bezogen sind."
+        "Stelle sicher, dass die Ausgabe dem vorgegebenen JSON-Schema entspricht und alle Details wie 'supporting_data_points' korrekt und nachvollziehbar auf die bereitgestellten Datenabschnitte bezogen sind."
     )
     if additional_context_text:
         review_user_prompt_content += f"\n\n**Ursprünglicher zusätzlicher Kontext/Anweisungen vom Benutzer (relevant für den Gesamtkontext):**\n{additional_context_text}"
@@ -240,7 +285,7 @@ def perform_llm_analysis(
     final_llm_response_content = None
     try:
         completion_review = openai_client.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            model=os.getenv("OPENAI_MODEL", "gpt-4o"),
             messages=messages_review,
             temperature=0.0,
             seed=123,

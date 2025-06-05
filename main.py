@@ -201,9 +201,11 @@ with col2:
                         if insight.get('supporting_data_points'):
                             st.write("**Stützende Datenpunkte:**")
                             for dp_idx, dp in enumerate(insight['supporting_data_points']):
-                                st.markdown(f"- **Referenz {dp_idx+1}:** {dp.get('row_reference', 'N/A')}, **Spalte:** {dp.get('column_reference', 'N/A')}, **Wert:** {dp.get('value', 'N/A')}, **Erklärung:** {dp.get('explanation', 'N/A')}")
-                        else:
-                            st.info("Keine spezifischen Datenpunkte für diesen Insight angegeben.")
+                                if isinstance(dp, dict): # Überprüfen, ob dp ein Dictionary ist
+                                    st.markdown(f"- **Referenz {dp_idx+1}:** {dp.get('row_reference', 'N/A')}, **Spalte:** {dp.get('column_reference', 'N/A')}, **Wert:** {dp.get('value', 'N/A')}, **Erklärung:** {dp.get('explanation', 'N/A')}")
+                                else:
+                                    # Gibt den tatsächlichen Inhalt von dp aus, wenn es kein Dictionary ist
+                                    st.markdown(f"- **Referenz {dp_idx+1} (Unerwartetes Format):** {str(dp)}")
             else:
                 st.info("Keine spezifischen Kern-Erkenntnisse gefunden oder vom LLM generiert.")
 
