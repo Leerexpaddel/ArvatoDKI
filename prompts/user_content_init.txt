@@ -1,0 +1,29 @@
+**Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
+```json
+{detailed_data_summary_dict}
+```
+
+**Globale Aggregationen für übergeordnete Trends und Vergleiche:**
+
+**1. Aggregation pro Land UND Zahlungsmethode (über alle Monate):**
+Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
+zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
+```csv
+{global_agg_country_pm_csv}
+```
+
+**2. Aggregation NUR pro Land (über alle Monate und Zahlungsmethoden):**
+Diese Tabelle fasst die wichtigsten KPIs pro Land zusammen, um die Performance jedes Landes gesamt zu bewerten.
+```csv
+{global_agg_country_csv}
+```
+
+**3. Aggregation NUR pro Zahlungsmethode (über alle Monate und Länder):**
+Diese Tabelle fasst die wichtigsten KPIs pro Zahlungsmethode zusammen, um die Performance jeder Zahlungsmethode gesamt zu bewerten.
+```csv
+{global_agg_pm_csv}
+```
+
+**Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
+{top_gross_sales}
+# ... (und die anderen Anomalie-CSVs) ...

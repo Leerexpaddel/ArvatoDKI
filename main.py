@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from dotenv import load_dotenv
 import json
+import csv
 
 from core.analyzer import perform_llm_analysis, get_openai_client_internal
 from services.db import get_mongo_client, save_insight
@@ -113,7 +114,10 @@ with col1:
             if file_extension == "xlsx":
                 df_to_analyze = pd.read_excel(uploaded_file)
             elif file_extension == "csv":
-                df_to_analyze = pd.read_csv(uploaded_file)
+                sample = uploaded_file.read(2048).decode("utf-8")
+                uploaded_file.seek(0)
+                dialect = csv.Sniffer().sniff(sample)
+                df_to_analyze = pd.read_csv(uploaded_file, sep=dialect.delimiter)
             elif file_extension == "txt":
                 additional_context_from_txt_main_upload = uploaded_file.read().decode("utf-8")
                 st.success("Textdatei (als Hauptdatei) erfolgreich hochgeladen!")

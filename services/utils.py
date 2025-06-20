@@ -78,7 +78,7 @@ def add_calculated_kpis_to_df(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Defensive Kopie, um SettingWithCopyWarning zu vermeiden
     df_copy = df.copy()
-
+    print(df_copy.columns.tolist())
     # Stellen sicher, dass relevante Spalten numerisch sind
     numeric_cols = [
         'No Orders', 'EUR Gross Sales', 'No Returns', 'EUR Returns',

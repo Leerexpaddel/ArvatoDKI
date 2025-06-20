@@ -1,0 +1,17 @@
+Hier ist die detaillierte Datenzusammenfassung der angereicherten Daten (original):
+```json\n{detailed_data_summary_dict}\n```\n
+
+Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n
+**1. Aggregation pro Land UND Zahlungsmethode:**\n```csv\n{global_agg_country_pm_csv}\n```\n
+**2. Aggregation NUR pro Land:**\n```csv\n{global_agg_country_csv}\n```\n
+**3. Aggregation NUR pro Zahlungsmethode:**\n```csv\n{global_agg_pm_csv}\n```\n
+
+Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n
+```csv\n{global_agg_country_pm_csv}\n```\n
+
+Hier sind die spezifischen Auffälligkeiten und Extremwerte, die der ersten Analyse zur Verfügung standen:\n
+**Top {n} Transaktionen nach Bruttoumsatz:**\n```csv\n{top_gross_sales}\n```\n
+**Top {n} höchste Retourenquoten:**\n```csv\n{top_return_rate_eur}\n```\n
+**Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**\n```csv\n{all_write_offs_gt_0}\n```\n
+**Top {n} höchste Rückbuchungsquoten:**\n```csv\n{top_chargeback_rate_eur}\n```\n
+**Top {n} höchste Werte in Mahnstufe 2 (höchstes Risiko):**\n```csv\n{top_dunning_level2_eur}\n```\n

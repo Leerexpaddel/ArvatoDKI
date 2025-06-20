@@ -114,55 +114,24 @@ def perform_llm_analysis(
         with open(system_prompt_follow_up_path, "r", encoding="utf-8") as f:
             system_prompt = f.read() # system_prompt holds the content of system_prompt_follow_up.txt
 
-        user_content = f"""
-            **Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
-            Diese Übersicht enthält Spalteninformationen, Datentypen und grundlegende Statistiken (Min, Max, Durchschnitt)
-            für alle Originalspalten und die neu berechneten KPI-Spalten.
-            ```json
-            {json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}
-            ```
+        user_content_path = os.path.join(os.path.dirname(__file__), '../prompts/user_content.txt')
+        with open(user_content_path, "r", encoding="utf-8") as f:
+            user_content = f.read()
 
-            **Globale Aggregationen für übergeordnete Trends und Vergleiche (pro Land/Zahlungsmethode über alle Monate):**
-            Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
-            zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
-            ```csv
-            {global_agg_country_pm_csv}
-            ```
+        template_ctx = {
+            "data_summary_json": json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False),
+            "agg_country_payment_csv": global_agg_country_pm_csv,
+            "top_n": anomalies_csvs.get("n", 5),
+            "top_gross_sales_csv": anomalies_csvs.get("top_gross_sales", "Nicht verfügbar."),
+            "top_return_rate_csv": anomalies_csvs.get("top_return_rate_eur", "Nicht verfügbar."),
+            "all_write_offs_csv": anomalies_csvs.get("all_write_offs_gt_0", "Nicht verfügbar."),
+            "top_chargeback_rate_csv": anomalies_csvs.get("top_chargeback_rate_eur", "Nicht verfügbar."),
+            "top_dunning_level2_csv": anomalies_csvs.get("top_dunning_level2_eur", "Nicht verfügbar."),
+            "prev_insights_summary": previous_insights_summary_for_prompt,
+            "follow_up_question": follow_up_question,
+        }
 
-            **Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
-            Diese Abschnitte heben einzelne Zeilen aus dem erweiterten Original-DataFrame hervor,
-            die besonders hohe oder niedrige Werte für bestimmte Kennzahlen aufweisen und
-            möglicherweise genauer untersucht werden sollten. Diese Zeilen enthalten alle Originalspalten
-            und die berechneten KPIs für diesen spezifischen Eintrag.
-
-            **Top {anomalies_csvs.get('n', 5)} Transaktionen nach Bruttoumsatz:**
-            ```csv
-            {anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}
-            ```
-
-            **Top {anomalies_csvs.get('n', 5)} höchste Retourenquoten:**
-            ```csv
-            {anomalies_csvs.get('top_return_rate_eur', 'Nicht verfügbar.')}
-            ```
-
-            **Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**
-            ```csv
-            {anomalies_csvs.get('all_write_offs_gt_0', 'Nicht verfügbar.')}
-            ```
-
-            **Top {anomalies_csvs.get('n', 5)} höchste Rückbuchungsquoten:**
-            ```csv
-            {anomalies_csvs.get('top_chargeback_rate_eur', 'Nicht verfügbar.')}
-            ```
-
-            **Top {anomalies_csvs.get('n', 5)} höchste Werte in Mahnstufe 2 (höchstes Risiko):**
-            ```csv
-            {anomalies_csvs.get('top_dunning_level2_eur', 'Nicht verfügbar.')}
-            ```
-
-            {previous_insights_summary_for_prompt}
-            **Deine spezifische Folgefrage:** {follow_up_question}
-        """
+        user_content = user_content.format(**template_ctx)
         if additional_context_text:
             user_content += f"\n\n**Ursprünglicher zusätzlicher Kontext/Anweisungen vom Benutzer (für den Gesamtkontext relevant):**\n{additional_context_text}"
         user_content += historical_insights_context
@@ -177,38 +146,21 @@ def perform_llm_analysis(
         system_prompt_initial_path = os.path.join(os.path.dirname(__file__), '../prompts/system_prompt_initial.txt')
         with open(system_prompt_initial_path, 'r', encoding='utf-8') as f:
             system_prompt = f.read()
+        
+        user_content_path = os.path.join(os.path.dirname(__file__), '../prompts/user_content_init.txt')
+        with open(user_content_path, "r", encoding="utf-8") as f:
+            user_content = f.read()
 
-        user_content = f"""
-            **Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
-            ```json
-            {json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}
-            ```
+        template_ctx = {
+            "detailed_data_summary_dict": json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False),
+            "global_agg_country_pm_csv": global_agg_country_pm_csv,
+            "global_agg_country_csv": global_agg_country_csv,
+            "top_gross_sales": anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.'),
+            "global_agg_pm_csv": global_agg_pm_csv,
+        }
 
-            **Globale Aggregationen für übergeordnete Trends und Vergleiche:**
-            
-            **1. Aggregation pro Land UND Zahlungsmethode (über alle Monate):**
-            Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
-            zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
-            ```csv
-            {global_agg_country_pm_csv}
-            ```
+        user_content = user_content.format(**template_ctx)
 
-            **2. Aggregation NUR pro Land (über alle Monate und Zahlungsmethoden):**
-            Diese Tabelle fasst die wichtigsten KPIs pro Land zusammen, um die Performance jedes Landes gesamt zu bewerten.
-            ```csv
-            {global_agg_country_csv}
-            ```
-
-            **3. Aggregation NUR pro Zahlungsmethode (über alle Monate und Länder):**
-            Diese Tabelle fasst die wichtigsten KPIs pro Zahlungsmethode zusammen, um die Performance jeder Zahlungsmethode gesamt zu bewerten.
-            ```csv
-            {global_agg_pm_csv}
-            ```
-
-            **Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
-            {anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}
-            # ... (und die anderen Anomalie-CSVs) ...
-        """
         if additional_context_text:
             user_content += f"\n\n**Zusätzlicher Kontext/Anweisungen vom Benutzer:**\n{additional_context_text}"
         user_content += historical_insights_context
@@ -239,25 +191,26 @@ def perform_llm_analysis(
     st.info("Führe Selbstüberprüfung der Analyse durch...")
     with open("prompts/review_system_prompt.txt", "r", encoding="utf-8") as f:
         review_system_prompt = f.read()
-    review_user_prompt_content = (
-        "Hier ist die detaillierte Datenzusammenfassung der angereicherten Daten (original):"
-        f"```json\n{json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False)}\n```\n"
 
-        "Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n"
-        f"**1. Aggregation pro Land UND Zahlungsmethode:**\n```csv\n{global_agg_country_pm_csv}\n```\n"
-        f"**2. Aggregation NUR pro Land:**\n```csv\n{global_agg_country_csv}\n```\n"
-        f"**3. Aggregation NUR pro Zahlungsmethode:**\n```csv\n{global_agg_pm_csv}\n```\n"
+    review_user_prompt_content_path = os.path.join(os.path.dirname(__file__), '../prompts/review_user_prompt_content.txt')
+    with open(review_user_prompt_content_path, "r", encoding="utf-8") as f:
+            review_user_prompt_content = f.read()
 
-        "Hier sind die globalen Aggregationen, die der ersten Analyse zur Verfügung standen:\n"
-        f"```csv\n{global_agg_country_pm_csv}\n```\n"
+    template_ctx = {
+        "detailed_data_summary_dict": json.dumps(detailed_data_summary_dict, indent=2, ensure_ascii=False),
+        "global_agg_country_pm_csv": global_agg_country_pm_csv,
+        "global_agg_country_csv": global_agg_country_csv,
+        "global_agg_pm_csv": global_agg_pm_csv,
+        "n": anomalies_csvs.get('n', 5),
+        "top_gross_sales": anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.'),
+        "top_return_rate_eur": anomalies_csvs.get('top_return_rate_eur', 'Nicht verfügbar.'),
+        "all_write_offs_gt_0": anomalies_csvs.get('all_write_offs_gt_0', 'Nicht verfügbar.'),
+        "top_chargeback_rate_eur": anomalies_csvs.get('top_chargeback_rate_eur', 'Nicht verfügbar.'),
+        "top_dunning_level2_eur": anomalies_csvs.get('top_dunning_level2_eur', 'Nicht verfügbar.'),
+    }
 
-        "Hier sind die spezifischen Auffälligkeiten und Extremwerte, die der ersten Analyse zur Verfügung standen:\n"
-        f"**Top {anomalies_csvs.get('n', 5)} Transaktionen nach Bruttoumsatz:**\n```csv\n{anomalies_csvs.get('top_gross_sales', 'Nicht verfügbar.')}\n```\n"
-        f"**Top {anomalies_csvs.get('n', 5)} höchste Retourenquoten:**\n```csv\n{anomalies_csvs.get('top_return_rate_eur', 'Nicht verfügbar.')}\n```\n"
-        f"**Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**\n```csv\n{anomalies_csvs.get('all_write_offs_gt_0', 'Nicht verfügbar.')}\n```\n"
-        f"**Top {anomalies_csvs.get('n', 5)} höchste Rückbuchungsquoten:**\n```csv\n{anomalies_csvs.get('top_chargeback_rate_eur', 'Nicht verfügbar.')}\n```\n"
-        f"**Top {anomalies_csvs.get('n', 5)} höchste Werte in Mahnstufe 2 (höchstes Risiko):**\n```csv\n{anomalies_csvs.get('top_dunning_level2_eur', 'Nicht verfügbar.')}\n```\n"
-    )
+    review_user_prompt_content = review_user_prompt_content.format(**template_ctx)
+    
     if follow_up_question:
         review_user_prompt_content += (
             "Die KI hat eine **Folgeanalyse** zu folgender spezifischen Frage durchgeführt:\n"

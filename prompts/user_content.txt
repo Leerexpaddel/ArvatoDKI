@@ -1,0 +1,47 @@
+**Hier ist eine detaillierte Zusammenfassung der Struktur und Statistik des angereicherten DataFrames:**
+Diese Übersicht enthält Spalteninformationen, Datentypen und grundlegende Statistiken (Min, Max, Durchschnitt)
+für alle Originalspalten und die neu berechneten KPI-Spalten.
+```json
+{data_summary_json}
+```
+
+**Globale Aggregationen für übergeordnete Trends und Vergleiche (pro Land/Zahlungsmethode über alle Monate):**
+Diese Tabelle fasst die wichtigsten KPIs über alle Monate hinweg zusammen, um globale Muster und Vergleiche
+zwischen Ländern und Zahlungsmethoden auf einer aggregierten Ebene zu ermöglichen.
+```csv
+{agg_country_payment_csv}
+```
+
+**Spezifische Auffälligkeiten und Extremwerte aus den Monatsdaten:**
+Diese Abschnitte heben einzelne Zeilen aus dem erweiterten Original-DataFrame hervor,
+die besonders hohe oder niedrige Werte für bestimmte Kennzahlen aufweisen und
+möglicherweise genauer untersucht werden sollten. Diese Zeilen enthalten alle Originalspalten
+und die berechneten KPIs für diesen spezifischen Eintrag.
+
+**Top {top_n} Transaktionen nach Bruttoumsatz:**
+```csv
+{top_gross_sales_csv}
+```
+
+**Top {top_n} höchste Retourenquoten:**
+```csv
+{top_return_rate_csv}
+```
+
+**Alle Zeilen mit Abschreibungen (EUR Write-Offs > 0):**
+```csv
+{all_write_offs_csv}
+```
+
+**Top {top_n} höchste Rückbuchungsquoten:**
+```csv
+{top_chargeback_rate_csv}
+```
+
+**Top {top_n} höchste Werte in Mahnstufe 2 (höchstes Risiko):**
+```csv
+{top_dunning_level2_csv}
+```
+
+{prev_insights_summary}
+**Deine spezifische Folgefrage:** {follow_up_question}
